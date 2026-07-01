@@ -51,16 +51,16 @@ namespace RamManager
             trayIcon = new NotifyIcon();
             trayIcon.Text = "RAM Manager - Standby";
             
-            // Procura o arquivo ico.ico na mesma pasta do executável
-            string appDir = Path.GetDirectoryName(Application.ExecutablePath);
-            string iconPath = Path.Combine(appDir, "ico.ico");
             try 
             { 
-                trayIcon.Icon = new Icon(iconPath); 
+                // Lê o ícone embutido no próprio executável durante a compilação (Ultra Portátil)
+                trayIcon.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); 
             } 
             catch 
             { 
-                trayIcon.Icon = SystemIcons.Shield; // Fallback caso o ico.ico seja deletado
+                // Fallback extremo: Extrai o ícone nativo do Gerenciador de Tarefas do Windows (taskmgr.exe)
+                string taskMgrPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "taskmgr.exe");
+                trayIcon.Icon = Icon.ExtractAssociatedIcon(taskMgrPath);
             }
 
             trayIcon.ContextMenu = menu;
