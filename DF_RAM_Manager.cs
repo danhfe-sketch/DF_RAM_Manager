@@ -34,10 +34,10 @@ namespace RamManager
             // Cria o submenu de configuração do Timer
             MenuItem timerMenu = new MenuItem("Set Timer");
             timerItems = new MenuItem[] {
-                new MenuItem("5 min", Timer5_Click),
+                new MenuItem("5 min", Timer5_Click) { Checked = true },
                 new MenuItem("10 min", Timer10_Click),
                 new MenuItem("15 min", Timer15_Click),
-                new MenuItem("30 min", Timer30_Click) { Checked = true }, // Padrão
+                new MenuItem("30 min", Timer30_Click),
                 new MenuItem("60 min", Timer60_Click)
             };
             timerMenu.MenuItems.AddRange(timerItems);
@@ -75,17 +75,29 @@ namespace RamManager
             Application.Run();
         }
 
-        // Função que grava o executável no Registro de inicialização do Windows
+        // Função que grava o executável na inicialização do Windows
         static void SetStartup()
         {
             try
             {
-                RegistryKey rk = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
-                rk.SetValue("RamManager", Application.ExecutablePath);
+                // Como o programa exige Administrador, o Registro do Windows o bloqueia na inicialização.
+                // A solução é criar uma tarefa invisível no Agendador de Tarefas com privilégios máximos.
+                ProcessStartInfo startInfo = new ProcessStartInfo();
+                startInfo.FileName = "schtasks.exe";
+                // Cria a tarefa executando no Logon do usuário (/sc onlogon) com privilégios de Admin (/rl highest). 
+                // O /f força a atualização do caminho caso você mova o .exe de pasta.
+                startInfo.Arguments = "/create /tn \"RamManager\" /tr \"\\\"" + Application.ExecutablePath + "\\\"\" /sc onlogon /rl highest /f";
+                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                startInfo.CreateNoWindow = true;
+
+                using (Process process = Process.Start(startInfo))
+                {
+                    process.WaitForExit();
+                }
             }
             catch 
             { 
-                // Ignora silenciosamente erros caso não tenha permissão no Registro
+                // Ignora silenciosamente erros caso não consiga criar a tarefa
             }
         }
 
